@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+qlora_history/
+qlora_output/
+checkpoint-*/
+*.log
+.pytest_cache/
