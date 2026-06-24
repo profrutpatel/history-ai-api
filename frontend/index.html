@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History AI — Ancient India Chat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #161920;
+      --surface2:  #1e2230;
+      --border:    #2a2f40;
+      --accent:    #c9933a;
+      --accent2:   #e8b84b;
+      --text:      #e8e4d8;
+      --text-muted:#8a8a9a;
+      --user-bg:   #1a2a3a;
+      --ai-bg:     #1a1e2a;
+      --radius:    14px;
+      --shadow:    0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #1a1208 0%, #0d0f14 60%);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .logo {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 20px;
+      box-shadow: 0 0 20px rgba(201,147,58,0.3);
+      flex-shrink: 0;
+    }
+    .header-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      color: var(--accent2);
+      letter-spacing: 0.3px;
+    }
+    .header-text p {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+    .status-dot {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #666;
+      transition: background 0.4s;
+    }
+    .dot.ready  { background: #4caf7d; box-shadow: 0 0 6px #4caf7d88; }
+    .dot.loading{ background: var(--accent); animation: pulse 1.4s infinite; }
+    .dot.error  { background: #e05555; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* ── Main layout ─────────────────────────────────────────────── */
+    main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────────── */
+    aside {
+      width: 240px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 16px 12px;
+      gap: 6px;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+    .sidebar-title {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
+      padding: 0 6px;
+      margin-bottom: 4px;
+    }
+    .suggestion-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.78rem;
+      padding: 10px 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+    .suggestion-btn:hover {
+      border-color: var(--accent);
+      background: rgba(201,147,58,0.08);
+      color: var(--accent2);
+      transform: translateX(3px);
+    }
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 0;
+    }
+    .clear-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 9px 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      margin-top: auto;
+    }
+    .clear-btn:hover {
+      border-color: #e05555;
+      color: #e05555;
+    }
+
+    /* ── Chat area ───────────────────────────────────────────────── */
+    .chat-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scroll-behavior: smooth;
+    }
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* Welcome screen */
+    .welcome {
+      margin: auto;
+      text-align: center;
+      max-width: 460px;
+      animation: fadeIn 0.6s ease;
+    }
+    .welcome-icon {
+      font-size: 3.5rem;
+      margin-bottom: 16px;
+    }
+    .welcome h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.7rem;
+      color: var(--accent2);
+      margin-bottom: 10px;
+    }
+    .welcome p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    /* Message bubbles */
+    .msg {
+      display: flex;
+      gap: 12px;
+      max-width: 780px;
+      align-self: flex-start;
+      animation: slideUp 0.3s ease;
+    }
+    .msg.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .avatar.ai-av  { background: linear-gradient(135deg,#2a1a0a,#3d2b10); border: 1px solid var(--accent); }
+    .avatar.usr-av { background: linear-gradient(135deg,#0a1a2a,#102030); border: 1px solid #3a6a9a; }
+    .bubble {
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      line-height: 1.75;
+      max-width: 600px;
+      word-break: break-word;
+    }
+    .bubble.ai-bub {
+      background: var(--ai-bg);
+      border: 1px solid var(--border);
+      border-top-left-radius: 4px;
+    }
+    .bubble.usr-bub {
+      background: var(--user-bg);
+      border: 1px solid #2a3d50;
+      border-top-right-radius: 4px;
+      color: #cce4ff;
+    }
+    .meta {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      display: flex;
+      gap: 10px;
+    }
+    .meta span { display: flex; align-items: center; gap: 3px; }
+
+    /* Typing indicator */
+    .typing .bubble {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 16px 20px;
+    }
+    .typing-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-7px)} }
+
+    /* ── Input bar ───────────────────────────────────────────────── */
+    .input-area {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 14px 20px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+    textarea {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      padding: 12px 16px;
+      resize: none;
+      min-height: 48px;
+      max-height: 160px;
+      outline: none;
+      transition: border-color 0.2s;
+      overflow-y: auto;
+      line-height: 1.5;
+    }
+    textarea::placeholder { color: var(--text-muted); }
+    textarea:focus { border-color: var(--accent); }
+    .send-btn {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 12px;
+      color: #0d0f14;
+      font-size: 20px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .send-btn:hover:not(:disabled) { transform: scale(1.07); box-shadow: 0 4px 16px rgba(201,147,58,0.4); }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Stream toggle */
+    .stream-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      padding-bottom: 14px;
+    }
+    .stream-toggle input { accent-color: var(--accent); cursor: pointer; }
+
+    /* ── Info panel ──────────────────────────────────────────────── */
+    .info-bar {
+      display: flex;
+      gap: 18px;
+      padding: 8px 20px;
+      background: rgba(10,10,12,0.6);
+      border-top: 1px solid var(--border);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .info-bar span { display: flex; align-items: center; gap: 4px; }
+
+    /* Animations */
+    @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+    @keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ───────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">🏛️</div>
+  <div class="header-text">
+    <h1>History AI</h1>
+    <p>Qwen 2.5 · Fine-tuned on Upinder Singh's Ancient India</p>
+  </div>
+  <div class="status-dot">
+    <div class="dot loading" id="statusDot"></div>
+    <span id="statusText">Connecting...</span>
+  </div>
+</header>
+
+<!-- ── Main ─────────────────────────────────────────────────────────────── -->
+<main>
+
+  <!-- Sidebar -->
+  <aside>
+    <div class="sidebar-title">Suggested Questions</div>
+
+    <button class="suggestion-btn" onclick="useSuggestion(this)">Who was Ashoka and what was his Dhamma?</button>
+    <button class="suggestion-btn" onclick="useSuggestion(this)">Describe the Indus Valley / Harappan Civilisation.</button>
+    <button class="suggestion-btn" onclick="useSuggestion(this)">How was the Mauryan Empire organised?</button>
+    <button class="suggestion-btn" onclick="useSuggestion(this)">What was the significance of the Gupta period?</button>
+    <button class="suggestion-btn" onclick="useSuggestion(this)">Explain the caste system in ancient India.</button>
+    <button class="suggestion-btn" onclick="useSuggestion(this)">What were the major religious developments in early medieval India?</button>
+    <button class="suggestion-btn" onclick="useSuggestion(this)">Who was Chandragupta Maurya?</button>
+    <button class="suggestion-btn" onclick="useSuggestion(this)">Tell me about Vedic society and culture.</button>
+
+    <div class="sidebar-divider"></div>
+    <button class="clear-btn" onclick="clearChat()">🗑️ Clear conversation</button>
+  </aside>
+
+  <!-- Chat -->
+  <div class="chat-wrapper">
+    <div id="messages">
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-icon">📜</div>
+        <h2>Ask About Ancient India</h2>
+        <p>I'm fine-tuned on Upinder Singh's <em>A History of Ancient and Early Medieval India</em>. Ask me anything about the Indus Valley, Vedic period, Mauryan and Gupta Empires, and more.</p>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <label class="stream-toggle">
+        <input type="checkbox" id="streamToggle" checked />
+        Stream
+      </label>
+      <textarea
+        id="queryInput"
+        placeholder="Ask about ancient or early medieval Indian history…"
+        rows="1"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendQuery()" title="Send">
+        ➤
+      </button>
+    </div>
+
+    <div class="info-bar" id="infoBar">
+      <span>⚙️ <span id="infoModel">—</span></span>
+      <span>💻 <span id="infoDevice">—</span></span>
+      <span>🎛️ VRAM: <span id="infoVram">—</span></span>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // ── Config ──────────────────────────────────────────────────────────────────
+  const API = "http://localhost:8000";
+  let history = [];          // conversation history
+  let isGenerating = false;
+
+  // ── On load: check health + fetch info ────────────────────────────────────
+  async function init() {
+    await checkHealth();
+    await fetchInfo();
+  }
+
+  async function checkHealth() {
+    try {
+      const r = await fetch(`${API}/health`);
+      const d = await r.json();
+      const dot  = document.getElementById("statusDot");
+      const text = document.getElementById("statusText");
+      if (d.status === "ok") {
+        dot.className = "dot ready";
+        text.textContent = "Ready";
+      } else if (d.status === "loading") {
+        dot.className = "dot loading";
+        text.textContent = "Loading model…";
+        setTimeout(checkHealth, 3000);
+      } else {
+        dot.className = "dot error";
+        text.textContent = "Error";
+      }
+    } catch {
+      document.getElementById("statusDot").className = "dot error";
+      document.getElementById("statusText").textContent = "Offline";
+      setTimeout(checkHealth, 5000);
+    }
+  }
+
+  async function fetchInfo() {
+    try {
+      const r = await fetch(`${API}/info`);
+      const d = await r.json();
+      const name = d.model_path.split(/[/\\]/).pop() || d.model_path;
+      document.getElementById("infoModel").textContent  = name;
+      document.getElementById("infoDevice").textContent = d.device.toUpperCase();
+      if (d.vram_used_gb != null) {
+        document.getElementById("infoVram").textContent =
+          `${d.vram_used_gb} / ${d.vram_total_gb} GB`;
+      } else {
+        document.getElementById("infoVram").textContent = "N/A";
+      }
+    } catch { /* ignore */ }
+  }
+
+  // ── Send query ──────────────────────────────────────────────────────────────
+  async function sendQuery() {
+    const input = document.getElementById("queryInput");
+    const query = input.value.trim();
+    if (!query || isGenerating) return;
+
+    // Hide welcome screen
+    const welcome = document.getElementById("welcomeScreen");
+    if (welcome) welcome.remove();
+
+    isGenerating = true;
+    setInputEnabled(false);
+
+    // Add user bubble
+    appendBubble("user", query, null);
+    history.push({ role: "user", content: query });
+    input.value = "";
+    autoResize(input);
+
+    const useStream = document.getElementById("streamToggle").checked;
+
+    if (useStream) {
+      await sendStream(query);
+    } else {
+      await sendFull(query);
+    }
+
+    isGenerating = false;
+    setInputEnabled(true);
+    fetchInfo(); // refresh VRAM
+  }
+
+  // Full (non-streaming) request
+  async function sendFull(query) {
+    const typingId = showTyping();
+    try {
+      const t0 = performance.now();
+      const r = await fetch(`${API}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, history: history.slice(0,-1), max_new_tokens: 512 }),
+      });
+      removeTyping(typingId);
+
+      if (!r.ok) {
+        const err = await r.json();
+        appendBubble("ai", `⚠️ Error ${r.status}: ${err.detail || JSON.stringify(err)}`, null);
+        return;
+      }
+
+      const d = await r.json();
+      const ms = Math.round(performance.now() - t0);
+      appendBubble("ai", d.answer, { tokens: d.tokens_generated, ms });
+      history.push({ role: "assistant", content: d.answer });
+    } catch(e) {
+      removeTyping(typingId);
+      appendBubble("ai", `⚠️ Network error: ${e.message}`, null);
+    }
+  }
+
+  // Streaming (SSE) request
+  async function sendStream(query) {
+    const msgId = appendBubble("ai", "", null, true);   // empty streaming bubble
+    let fullText = "";
+    let tokenCount = 0;
+    const t0 = performance.now();
+
+    try {
+      const r = await fetch(`${API}/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, history: history.slice(0,-1), max_new_tokens: 512 }),
+      });
+
+      if (!r.ok) {
+        const err = await r.json();
+        updateBubble(msgId, `⚠️ Error ${r.status}: ${err.detail || JSON.stringify(err)}`);
+        return;
+      }
+
+      const reader = r.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+
+        const lines = buf.split("\n");
+        buf = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const raw = line.slice(5).trim();
+          if (raw === "[DONE]") {
+            const ms = Math.round(performance.now() - t0);
+            finaliseStreamBubble(msgId, fullText, { tokens: tokenCount, ms });
+            history.push({ role: "assistant", content: fullText });
+            return;
+          }
+          try {
+            const ev = JSON.parse(raw);
+            if (ev.token) {
+              fullText += ev.token;
+              tokenCount++;
+              updateBubble(msgId, fullText);
+            }
+          } catch { /* skip malformed events */ }
+        }
+      }
+    } catch(e) {
+      updateBubble(msgId, `⚠️ Stream error: ${e.message}`);
+    }
+  }
+
+  // ── DOM helpers ─────────────────────────────────────────────────────────────
+  let msgCounter = 0;
+
+  function appendBubble(role, text, meta, isStreaming = false) {
+    const id = `msg-${++msgCounter}`;
+    const isAI = role === "ai";
+    const div = document.createElement("div");
+    div.className = `msg ${role === "user" ? "user" : ""}`;
+    div.id = id;
+
+    const avatar = document.createElement("div");
+    avatar.className = `avatar ${isAI ? "ai-av" : "usr-av"}`;
+    avatar.textContent = isAI ? "🏛️" : "👤";
+
+    const bubble = document.createElement("div");
+    bubble.className = `bubble ${isAI ? "ai-bub" : "usr-bub"}`;
+    bubble.textContent = text;
+    if (isStreaming) bubble.dataset.streaming = "1";
+
+    const wrap = document.createElement("div");
+
+    if (meta) {
+      const m = document.createElement("div");
+      m.className = "meta";
+      m.innerHTML = `<span>⚡ ${meta.tokens} tokens</span><span>⏱️ ${meta.ms}ms</span>`;
+      wrap.appendChild(bubble);
+      wrap.appendChild(m);
+    } else {
+      wrap.appendChild(bubble);
+    }
+
+    div.appendChild(avatar);
+    div.appendChild(wrap);
+
+    const container = document.getElementById("messages");
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return id;
+  }
+
+  function updateBubble(id, text) {
+    const el = document.querySelector(`#${id} .bubble`);
+    if (el) {
+      el.textContent = text;
+      document.getElementById("messages").scrollTop = 99999;
+    }
+  }
+
+  function finaliseStreamBubble(id, text, meta) {
+    const wrap = document.querySelector(`#${id} div:last-child`);
+    if (!wrap) return;
+    const bubble = wrap.querySelector(".bubble");
+    if (bubble) {
+      bubble.textContent = text;
+      delete bubble.dataset.streaming;
+    }
+    if (meta) {
+      const m = document.createElement("div");
+      m.className = "meta";
+      m.innerHTML = `<span>⚡ ~${meta.tokens} tokens</span><span>⏱️ ${meta.ms}ms</span>`;
+      wrap.appendChild(m);
+    }
+    document.getElementById("messages").scrollTop = 99999;
+  }
+
+  let typingIdCounter = 0;
+  function showTyping() {
+    const id = `typing-${++typingIdCounter}`;
+    const div = document.createElement("div");
+    div.className = "msg typing";
+    div.id = id;
+    div.innerHTML = `
+      <div class="avatar ai-av">🏛️</div>
+      <div>
+        <div class="bubble ai-bub">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>`;
+    const c = document.getElementById("messages");
+    c.appendChild(div);
+    c.scrollTop = c.scrollHeight;
+    return id;
+  }
+
+  function removeTyping(id) {
+    document.getElementById(id)?.remove();
+  }
+
+  function setInputEnabled(enabled) {
+    document.getElementById("queryInput").disabled = !enabled;
+    document.getElementById("sendBtn").disabled    = !enabled;
+  }
+
+  function handleKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendQuery();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  }
+
+  function useSuggestion(btn) {
+    const input = document.getElementById("queryInput");
+    input.value = btn.textContent.trim();
+    input.focus();
+    autoResize(input);
+  }
+
+  async function clearChat() {
+    history = [];
+    const c = document.getElementById("messages");
+    c.innerHTML = `
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-icon">📜</div>
+        <h2>Ask About Ancient India</h2>
+        <p>I'm fine-tuned on Upinder Singh's <em>A History of Ancient and Early Medieval India</em>. Ask me anything about the Indus Valley, Vedic period, Mauryan and Gupta Empires, and more.</p>
+      </div>`;
+    await fetch(`${API}/chat/history`, { method: "DELETE" });
+  }
+
+  init();
+</script>
+</body>
+</html>
